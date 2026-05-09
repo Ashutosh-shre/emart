@@ -1,14 +1,19 @@
-FROM node:14 AS web-build
-WORKDIR /usr/src/app
-COPY ./ ./client
-RUN cd client && npm install && npm run build --prod
+FROM node:14 AS web_build
 
-# Use official nginx image as the base image
+WORKDIR /usr/app
+
+COPY ./ ./client
+
+RUN cd client && npm install && npm run build --configuration production
+
 FROM nginx:latest
 
-# Copy the build output to replace the default nginx contents.
-COPY --from=web-build /usr/src/app/client/dist/client/ /usr/share/nginx/html
+RUN rm -rf /usr/share/nginx/html/*
+
+COPY --from=web_build /usr/app/client/dist/client/ /usr/share/nginx/html/
+
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port 4200
-EXPOSE 4200
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
